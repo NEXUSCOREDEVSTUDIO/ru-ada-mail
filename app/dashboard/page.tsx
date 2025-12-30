@@ -28,26 +28,68 @@ export default function InboxPage() {
 
     if (selectedEmail) {
         return (
-            <div style={{ animation: 'fadeIn 0.3s' }}>
+            <div className="animate-enter" style={{ maxWidth: '900px', margin: '0 auto' }}>
                 <button
                     onClick={() => setSelectedEmail(null)}
-                    className="btn btn-secondary"
-                    style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                    className="btn-secondary"
+                    style={{
+                        marginBottom: '1.5rem',
+                        padding: '0.5rem 1rem',
+                        borderRadius: '8px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        cursor: 'pointer',
+                        fontSize: '0.9rem'
+                    }}
                 >
-                    ← Volver
+                    ← Volver a la lista
                 </button>
-                <div className="glass-panel" style={{ padding: '2rem' }}>
-                    <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>{selectedEmail.subject}</h1>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)', marginBottom: '2rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                            <span style={{ fontSize: '1.1rem', color: 'white' }}>De: <span style={{ color: 'var(--primary)' }}>{selectedEmail.from}</span></span>
-                            <span style={{ fontSize: '0.9rem' }}>Para: {selectedEmail.to}</span>
+
+                <div className="glass-panel" style={{ padding: '3rem', borderRadius: '24px' }}>
+                    <div style={{ paddingBottom: '2rem', borderBottom: '1px solid var(--glass-border)', marginBottom: '2rem' }}>
+                        <h1 style={{ fontSize: '2.5rem', fontWeight: 700, marginBottom: '1rem', lineHeight: 1.2 }}>{selectedEmail.subject}</h1>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                <div style={{
+                                    width: '48px',
+                                    height: '48px',
+                                    borderRadius: '16px',
+                                    background: 'linear-gradient(135deg, var(--primary), var(--accent))',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontWeight: 'bold',
+                                    fontSize: '1.25rem',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                                }}>
+                                    {selectedEmail.from.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '1.1rem', fontWeight: 600 }}>{selectedEmail.from}</div>
+                                    <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Para: {selectedEmail.to}</div>
+                                </div>
+                            </div>
+                            <div style={{
+                                padding: '0.5rem 1rem',
+                                background: 'rgba(255,255,255,0.05)',
+                                borderRadius: '20px',
+                                fontSize: '0.85rem',
+                                color: 'var(--text-secondary)'
+                            }}>
+                                {selectedEmail.date ? new Date(selectedEmail.date).toLocaleString([], { dateStyle: 'long', timeStyle: 'short' }) : 'Reciente'}
+                            </div>
                         </div>
-                        <span style={{ fontSize: '0.9rem' }}>
-                            {selectedEmail.date ? new Date(selectedEmail.date).toLocaleString() : 'Reciente'}
-                        </span>
                     </div>
-                    <div style={{ fontSize: '1.1rem', lineHeight: '1.6', whiteSpace: 'pre-wrap', minHeight: '200px' }}>
+
+                    <div style={{
+                        fontSize: '1.1rem',
+                        lineHeight: '1.8',
+                        whiteSpace: 'pre-wrap',
+                        minHeight: '200px',
+                        color: 'var(--text-primary)',
+                        fontFamily: 'inherit'
+                    }}>
                         {selectedEmail.body}
                     </div>
                 </div>
@@ -56,71 +98,104 @@ export default function InboxPage() {
     }
 
     return (
-        <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                <h1 style={{ fontSize: '2rem', fontWeight: 700 }}>Bandeja de Entrada</h1>
-                <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                    {emails.length} mensajes
+        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '2rem' }}>
+                <div>
+                    <h1 style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: '0.5rem', letterSpacing: '-1px' }}>Entrada</h1>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>Gestiona tus comunicaciones escolares</p>
+                </div>
+                <div style={{
+                    padding: '0.5rem 1rem',
+                    background: 'var(--glass-bg)',
+                    borderRadius: '20px',
+                    fontSize: '0.9rem',
+                    color: 'var(--text-secondary)',
+                    border: '1px solid var(--glass-border)'
+                }}>
+                    {emails.length} mensajes totales
                 </div>
             </div>
 
             {loading ? (
-                <div style={{ textAlign: 'center', padding: '2rem' }}>Cargando mensajes...</div>
+                <div style={{ textAlign: 'center', padding: '4rem' }}>
+                    <div style={{ marginBottom: '1rem', fontSize: '2rem' }}>🌀</div>
+                    <div style={{ color: 'var(--text-muted)' }}>Sincronizando correos...</div>
+                </div>
             ) : emails.length === 0 ? (
-                <div style={{ textAlign: 'center', color: 'var(--text-muted)', marginTop: '4rem' }}>
-                    No tienes correos nuevos.
+                <div className="glass-panel" style={{ textAlign: 'center', padding: '4rem', borderRadius: '24px' }}>
+                    <div style={{ fontSize: '3rem', marginBottom: '1rem', opacity: 0.5 }}>📭</div>
+                    <h3 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem' }}>Todo al día</h3>
+                    <p style={{ color: 'var(--text-muted)' }}>No tienes correos nuevos en tu bandeja.</p>
                 </div>
             ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {emails.map((email) => (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {emails.map((email, i) => (
                         <div
                             key={email.id}
-                            onClick={() => setSelectedEmail(email)}
+                            className="list-item animate-enter"
                             style={{
+                                animationDelay: `${i * 0.05}s`,
                                 padding: '1.25rem 1.5rem',
-                                background: email.read ? 'rgba(255,255,255,0.01)' : 'rgba(255,255,255,0.05)',
-                                borderLeft: email.read ? '2px solid transparent' : '2px solid var(--primary)',
-                                borderRadius: '12px',
+                                background: email.read ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.05)',
+                                borderRadius: '16px',
                                 cursor: 'pointer',
-                                transition: 'all 0.2s',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '1rem',
+                                gap: '1.25rem',
+                                border: email.read ? '1px solid transparent' : '1px solid rgba(99, 102, 241, 0.3)',
+                                position: 'relative'
                             }}
-                            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
-                            onMouseLeave={(e) => e.currentTarget.style.background = email.read ? 'rgba(255,255,255,0.01)' : 'rgba(255,255,255,0.05)'}
+                            onClick={() => setSelectedEmail(email)}
                         >
+                            {!email.read && (
+                                <div style={{
+                                    position: 'absolute',
+                                    left: '0.75rem',
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    width: '8px',
+                                    height: '8px',
+                                    borderRadius: '50%',
+                                    background: 'var(--accent)',
+                                    boxShadow: '0 0 10px var(--accent)'
+                                }} />
+                            )}
+
                             <div style={{
-                                width: '45px',
-                                height: '45px',
-                                borderRadius: '50%',
-                                background: 'linear-gradient(135deg, var(--primary), var(--accent))',
+                                width: '48px',
+                                height: '48px',
+                                borderRadius: '14px',
+                                background: email.read ? 'var(--glass-bg)' : 'linear-gradient(135deg, var(--primary), var(--accent))',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 fontWeight: 'bold',
                                 fontSize: '1.2rem',
                                 flexShrink: 0,
-                                boxShadow: '0 2px 10px rgba(0,0,0,0.2)'
+                                color: 'white'
                             }}>
                                 {email.from.charAt(0).toUpperCase()}
                             </div>
+
                             <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                                    <span style={{ fontWeight: email.read ? 400 : 700, fontSize: '1rem' }}>{email.from}</span>
-                                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem', alignItems: 'center' }}>
+                                    <span style={{ fontWeight: email.read ? 500 : 700, fontSize: '1rem', color: email.read ? 'var(--text-secondary)' : 'white' }}>
+                                        {email.from}
+                                    </span>
+                                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500 }}>
                                         {email.date ? new Date(email.date).toLocaleDateString() : ''}
                                     </span>
                                 </div>
-                                <div style={{ fontWeight: email.read ? 400 : 600, marginBottom: '0.25rem', color: 'var(--foreground)' }}>
+                                <div style={{ fontWeight: email.read ? 400 : 600, marginBottom: '0.35rem', color: 'var(--text-primary)', fontSize: '1.05rem' }}>
                                     {email.subject}
                                 </div>
                                 <div style={{
                                     color: 'var(--text-muted)',
-                                    fontSize: '0.9rem',
+                                    fontSize: '0.925rem',
                                     whiteSpace: 'nowrap',
                                     overflow: 'hidden',
-                                    textOverflow: 'ellipsis'
+                                    textOverflow: 'ellipsis',
+                                    maxWidth: '90%'
                                 }}>
                                     {email.body}
                                 </div>

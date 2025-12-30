@@ -17,8 +17,6 @@ export default function Sidebar() {
                 router.push("/");
             } else {
                 setUserEmail(user.email || "");
-                // Sync with local fallback if needed for legacy components, but try to use context in future
-                localStorage.setItem("jar_user", user.email || "");
             }
         });
         return () => unsubscribe();
@@ -26,7 +24,6 @@ export default function Sidebar() {
 
     const handleLogout = async () => {
         await signOut(auth);
-        localStorage.removeItem("jar_user");
         router.push("/");
     };
 
@@ -34,83 +31,132 @@ export default function Sidebar() {
 
     return (
         <aside className="glass-panel" style={{
-            width: '250px',
+            width: '280px',
             height: 'calc(100vh - 2rem)',
             margin: '1rem',
+            borderRadius: '24px',
             display: 'flex',
             flexDirection: 'column',
-            padding: '1.5rem'
+            padding: '2rem',
+            position: 'relative',
+            overflow: 'hidden'
         }}>
-            <div style={{ marginBottom: '2rem' }}>
-                <h2 style={{ fontSize: '1.5rem', fontWeight: 700 }}>
-                    Jar<span style={{ color: 'var(--primary)' }}>.edu</span>
+            {/* Decorative glow */}
+            <div style={{
+                position: 'absolute',
+                top: '-20%',
+                left: '-20%',
+                width: '150%',
+                height: '50%',
+                background: 'radial-gradient(ellipse at center, rgba(99, 102, 241, 0.15), transparent 70%)',
+                pointerEvents: 'none'
+            }} />
+
+            <div style={{ marginBottom: '3rem', position: 'relative' }}>
+                <h2 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.5px' }}>
+                    Jar<span style={{
+                        background: 'linear-gradient(135deg, var(--primary), var(--accent))',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent'
+                    }}>.edu</span>
                 </h2>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                    Intranet Segura
+                </div>
             </div>
 
-            <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
-                <Link href="/dashboard" style={{
-                    padding: '0.75rem 1rem',
-                    borderRadius: '8px',
-                    background: isActive('/dashboard') ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
-                    color: isActive('/dashboard') ? 'white' : 'var(--text-muted)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    fontWeight: 500
+            <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', flex: 1 }}>
+                <Link href="/dashboard/compose" className="btn" style={{
+                    marginBottom: '1.5rem',
+                    justifyContent: 'center',
+                    boxShadow: '0 8px 16px -4px rgba(99, 102, 241, 0.4)'
                 }}>
-                    📥 Bandeja de Entrada
-                </Link>
-                <Link href="/dashboard/sent" style={{
-                    padding: '0.75rem 1rem',
-                    borderRadius: '8px',
-                    background: isActive('/dashboard/sent') ? 'rgba(99, 102, 241, 0.2)' : 'transparent',
-                    color: isActive('/dashboard/sent') ? 'white' : 'var(--text-muted)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    fontWeight: 500
-                }}>
-                    📤 Enviados
+                    <span style={{ fontSize: '1.2rem' }}>+</span> Nuevo Mensaje
                 </Link>
 
-                <Link href="/dashboard/compose" style={{
-                    marginTop: '1rem',
-                    padding: '0.75rem 1rem',
-                    borderRadius: '8px',
-                    background: 'var(--primary)',
-                    color: 'white',
+                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.5rem', paddingLeft: '0.5rem' }}>
+                    MENU PRINCIPAL
+                </div>
+
+                <Link href="/dashboard" style={{
+                    padding: '0.875rem 1rem',
+                    borderRadius: '12px',
+                    background: isActive('/dashboard') ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
+                    color: isActive('/dashboard') ? 'white' : 'var(--text-secondary)',
+                    border: isActive('/dashboard') ? '1px solid rgba(99, 102, 241, 0.2)' : '1px solid transparent',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.5rem',
-                    fontWeight: 600,
-                    boxShadow: '0 4px 10px rgba(99, 102, 241, 0.3)'
+                    gap: '0.875rem',
+                    fontWeight: 500,
+                    transition: 'all 0.2s'
                 }}>
-                    ✏️ Redactar
+                    📤 <span style={{ flex: 1 }}>Bandeja de Entrada</span>
+                </Link>
+                <Link href="/dashboard/sent" style={{
+                    padding: '0.875rem 1rem',
+                    borderRadius: '12px',
+                    background: isActive('/dashboard/sent') ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
+                    color: isActive('/dashboard/sent') ? 'white' : 'var(--text-secondary)',
+                    border: isActive('/dashboard/sent') ? '1px solid rgba(99, 102, 241, 0.2)' : '1px solid transparent',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.875rem',
+                    fontWeight: 500,
+                    transition: 'all 0.2s'
+                }}>
+                    🚀 <span style={{ flex: 1 }}>Enviados</span>
                 </Link>
             </nav>
 
             <div style={{
-                borderTop: '1px solid var(--glass-border)',
-                paddingTop: '1rem',
-                marginTop: '1rem'
+                background: 'rgba(0,0,0,0.2)',
+                padding: '1rem',
+                borderRadius: '16px',
+                border: '1px solid var(--glass-border)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem'
             }}>
-                <div style={{ fontSize: '0.875rem', color: 'white', marginBottom: '0.5rem', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {userEmail}
+                <div style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '10px',
+                    background: 'linear-gradient(135deg, var(--text-muted), var(--background))',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1.2rem'
+                }}>
+                    👤
+                </div>
+                <div style={{ flex: 1, overflow: 'hidden' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Sesión actual</div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {userEmail.split('@')[0]}
+                    </div>
                 </div>
                 <button
                     onClick={handleLogout}
+                    title="Cerrar Sesión"
                     style={{
-                        background: 'transparent',
+                        background: 'rgba(255,255,255,0.05)',
                         border: 'none',
-                        color: 'var(--accent)',
+                        color: 'var(--text-muted)',
                         cursor: 'pointer',
-                        fontSize: '0.875rem',
-                        textAlign: 'left',
-                        padding: 0
+                        padding: '0.5rem',
+                        borderRadius: '8px',
+                        transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)';
+                        e.currentTarget.style.color = '#ef4444';
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                        e.currentTarget.style.color = 'var(--text-muted)';
                     }}
                 >
-                    Cerrar Sesión
+                    ✕
                 </button>
             </div>
         </aside>
