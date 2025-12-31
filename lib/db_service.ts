@@ -1,86 +1,93 @@
 import { db } from "./firebase";
-import { ref, push, onValue, query, orderByChild, equalTo, serverTimestamp, set } from "firebase/database";
+import { ref, push, onValue, update, remove, set, get, serverTimestamp } from "firebase/database";
 
-export interface Email {
-    id?: string;
-    from: string;
-    to: string;
-    subject: string;
-    body: string;
-    date: any; // Timestamp
-    read: boolean;
+export interface Contact {
+    phone: string;
+    name: string;
 }
 
-// Subscribe to emails received by the user
-export const subscribeToInbox = (userEmail: string, callback: (emails: Email[]) => void) => {
-    if (!userEmail) return () => { };
+export interface Message {
+    id?: string;
+    from: string; // phone number
+    to: string;   // phone number
+    body: string;
+    timestamp: any;
+    seen: boolean;
+    type: 'text' | 'image';
+}
 
-    // Note: Firebase Realtime Database filtering needs an index on 'to' in rules
-    // For now we will fetch 'emails' and filter client side if the dataset is small,
-    // OR ideally we structure data as `user_emails/{sanitized_email}/{email_id}`
+// FORMAT PHONE: helpers to sanitize
+export const sanitizePhone = (p: string) => p.replace(/\D/g, '');
 
-    const sanitizedEmail = userEmail.replace(/\./g, ','); // Firebase keys can't contain '.'
-    const userInboxRef = ref(db, `inboxes/${sanitizedEmail}`);
-
-    return onValue(userInboxRef, (snapshot) => {
-        const data = snapshot.val();
-        const loadedEmails: Email[] = [];
-        if (data) {
-            Object.entries(data).forEach(([key, value]: [string, any]) => {
-                loadedEmails.push({
-                    id: key,
-                    ...value,
-                    date: value.date || Date.now()
-                });
-            });
-        }
-        // Sort by date desc
-        loadedEmails.sort((a, b) => b.date - a.date);
-        callback(loadedEmails);
+// --- CONTACTS ---
+export const addContact = async (myPhone: string, contactPhone: string, contactName: string) => {
+    const cleanMy = sanitizePhone(myPhone);
+    const cleanContact = sanitizePhone(contactPhone);
+    const refPath = `users/${cleanMy}/contacts/${cleanContact}`;
+    await set(ref(db, refPath), {
+        phone: cleanContact,
+        name: contactName
     });
 };
 
-// Subscribe to sent emails
-export const subscribeToSent = (userEmail: string, callback: (emails: Email[]) => void) => {
-    if (!userEmail) return () => { };
-    const sanitizedEmail = userEmail.replace(/\./g, ',');
-    const userSentRef = ref(db, `sent/${sanitizedEmail}`);
-
-    return onValue(userSentRef, (snapshot) => {
-        const data = snapshot.val();
-        const loadedEmails: Email[] = [];
-        if (data) {
-            Object.entries(data).forEach(([key, value]: [string, any]) => {
-                loadedEmails.push({
-                    id: key,
-                    ...value,
-                    date: value.date || Date.now()
-                });
-            });
-        }
-        loadedEmails.sort((a, b) => b.date - a.date);
-        callback(loadedEmails);
+export const subscribeToContacts = (myPhone: string, callback: (contacts: Contact[]) => void) => {
+    const cleanMy = sanitizePhone(myPhone);
+    return onValue(ref(db, `users/${cleanMy}/contacts`), (snap) => {
+        const data = snap.val();
+        if (!data) return callback([]);
+        const list = Object.values(data) as Contact[];
+        // Sort alpha
+        list.sort((a, b) => a.name.localeCompare(b.name));
+        callback(list);
     });
-};
+}
 
-// Send an email
-export const sendEmail = async (from: string, to: string, subject: string, body: string) => {
-    const emailData = {
-        from,
-        to,
-        subject,
+// --- MESSAGES ---
+// Chat ID is usually combination of two phones sorted
+export const getChatId = (phone1: string, phone2: string) => {
+    const p1 = sanitizePhone(phone1);
+    const p2 = sanitizePhone(phone2);
+    return p1 < p2 ? `${p1}_${p2}` : `${p2}_${p1}`;
+}
+
+export const sendMessage = async (from: string, to: string, body: string) => {
+    const chatId = getChatId(from, to);
+    const msgRef = ref(db, `chats/${chatId}/messages`);
+
+    await push(msgRef, {
+        from: sanitizePhone(from),
+        to: sanitizePhone(to),
         body,
-        date: serverTimestamp(),
-        read: false
-    };
+        timestamp: serverTimestamp(),
+        seen: false,
+        type: 'text'
+    });
 
-    // 1. Add to recipient's inbox
-    const recipientSanitized = to.replace(/\./g, ',');
-    const inboxRef = ref(db, `inboxes/${recipientSanitized}`);
-    await push(inboxRef, emailData);
+    // Update "last message" for both users (for chat list preview if we implemented that)
+};
 
-    // 2. Add to sender's sent folder
-    const senderSanitized = from.replace(/\./g, ',');
-    const sentRef = ref(db, `sent/${senderSanitized}`);
-    await push(sentRef, emailData);
+export const subscribeToChat = (chatId: string, callback: (msgs: Message[]) => void) => {
+    return onValue(ref(db, `chats/${chatId}/messages`), (snap) => {
+        const data = snap.val();
+        if (!data) return callback([]);
+
+        const list = Object.entries(data).map(([key, val]: [string, any]) => ({
+            id: key,
+            ...val
+        }));
+        // Sort by time
+        list.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+        callback(list);
+    });
+};
+
+// EDIT & DELETE
+export const deleteMessage = async (chatId: string, msgId: string) => {
+    await remove(ref(db, `chats/${chatId}/messages/${msgId}`));
+};
+
+export const editMessage = async (chatId: string, msgId: string, newBody: string) => {
+    await update(ref(db, `chats/${chatId}/messages/${msgId}`), {
+        body: newBody
+    });
 };

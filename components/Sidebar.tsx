@@ -1,163 +1,132 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { auth } from "@/lib/firebase";
-import { signOut, onAuthStateChanged } from "firebase/auth";
+import { Contact, subscribeToContacts, addContact } from "@/lib/db_service";
+import Link from "next/link";
+import { signOut } from "firebase/auth";
 
-export default function Sidebar() {
-    const pathname = usePathname();
-    const router = useRouter();
-    const [userEmail, setUserEmail] = useState("");
+export default function Sidebar({ onSelectChat }: { onSelectChat?: (phone: string) => void }) {
+    // onSelectChat used if using a split view. 
+    // Currently, we'll assume navigation via URL for better deep linking or state lift?
+    // Let's stick to Link if possible or props.
+
+    const [userPhone, setUserPhone] = useState("");
+    const [contacts, setContacts] = useState<Contact[]>([]);
+    const [showAdd, setShowAdd] = useState(false);
+    const [newContactPhone, setNewContactPhone] = useState("");
+    const [newContactName, setNewContactName] = useState("");
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            if (!user) {
-                router.push("/");
-            } else {
-                setUserEmail(user.email || "");
+        const unsub = auth.onAuthStateChanged(u => {
+            if (u && u.email) {
+                const ph = u.email.split('@')[0];
+                setUserPhone(ph);
+                const unsubContacts = subscribeToContacts(ph, setContacts);
+                return () => unsubContacts();
             }
         });
-        return () => unsubscribe();
-    }, [router]);
+        return () => unsub();
+    }, []);
 
-    const handleLogout = async () => {
-        await signOut(auth);
-        router.push("/");
+    const handleAddContact = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newContactPhone || !newContactName) return;
+        await addContact(userPhone, newContactPhone, newContactName);
+        setShowAdd(false);
+        setNewContactName("");
+        setNewContactPhone("");
     };
 
-    const isActive = (path: string) => pathname === path;
-
     return (
-        <aside className="glass-panel" style={{
-            width: '280px',
-            height: 'calc(100vh - 2rem)',
-            margin: '1rem',
-            borderRadius: '24px',
+        <aside style={{
+            width: '400px',
+            background: 'var(--panel-bg)',
+            borderRight: '1px solid var(--border-color)',
             display: 'flex',
             flexDirection: 'column',
-            padding: '2rem',
-            position: 'relative',
-            overflow: 'hidden'
+            height: '100%'
         }}>
-            {/* Decorative glow */}
+            {/* Header */}
             <div style={{
-                position: 'absolute',
-                top: '-20%',
-                left: '-20%',
-                width: '150%',
-                height: '50%',
-                background: 'radial-gradient(ellipse at center, rgba(99, 102, 241, 0.15), transparent 70%)',
-                pointerEvents: 'none'
-            }} />
-
-            <div style={{ marginBottom: '3rem', position: 'relative' }}>
-                <h2 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.5px' }}>
-                    Jar<span style={{
-                        background: 'linear-gradient(135deg, var(--primary), var(--accent))',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent'
-                    }}>.edu</span>
-                </h2>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem', letterSpacing: '1px', textTransform: 'uppercase' }}>
-                    Intranet Segura
+                padding: '10px 16px',
+                background: 'var(--panel-header)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                height: '60px'
+            }}>
+                <div style={{ fontWeight: 600, color: '#e9edef' }}>Chats</div>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                    <button title="Cerrar Sessión" onClick={() => signOut(auth)} className="btn-icon">✖</button>
                 </div>
             </div>
 
-            <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', flex: 1 }}>
-                <Link href="/dashboard/compose" className="btn" style={{
-                    marginBottom: '1.5rem',
-                    justifyContent: 'center',
-                    boxShadow: '0 8px 16px -4px rgba(99, 102, 241, 0.4)'
-                }}>
-                    <span style={{ fontSize: '1.2rem' }}>+</span> Nuevo Mensaje
-                </Link>
-
-                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.5rem', paddingLeft: '0.5rem' }}>
-                    MENU PRINCIPAL
-                </div>
-
-                <Link href="/dashboard" style={{
-                    padding: '0.875rem 1rem',
-                    borderRadius: '12px',
-                    background: isActive('/dashboard') ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
-                    color: isActive('/dashboard') ? 'white' : 'var(--text-secondary)',
-                    border: isActive('/dashboard') ? '1px solid rgba(99, 102, 241, 0.2)' : '1px solid transparent',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.875rem',
-                    fontWeight: 500,
-                    transition: 'all 0.2s'
-                }}>
-                    📤 <span style={{ flex: 1 }}>Bandeja de Entrada</span>
-                </Link>
-                <Link href="/dashboard/sent" style={{
-                    padding: '0.875rem 1rem',
-                    borderRadius: '12px',
-                    background: isActive('/dashboard/sent') ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
-                    color: isActive('/dashboard/sent') ? 'white' : 'var(--text-secondary)',
-                    border: isActive('/dashboard/sent') ? '1px solid rgba(99, 102, 241, 0.2)' : '1px solid transparent',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.875rem',
-                    fontWeight: 500,
-                    transition: 'all 0.2s'
-                }}>
-                    🚀 <span style={{ flex: 1 }}>Enviados</span>
-                </Link>
-            </nav>
-
-            <div style={{
-                background: 'rgba(0,0,0,0.2)',
-                padding: '1rem',
-                borderRadius: '16px',
-                border: '1px solid var(--glass-border)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem'
-            }}>
-                <div style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '10px',
-                    background: 'linear-gradient(135deg, var(--text-muted), var(--background))',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '1.2rem'
-                }}>
-                    👤
-                </div>
-                <div style={{ flex: 1, overflow: 'hidden' }}>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Sesión actual</div>
-                    <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {userEmail.split('@')[0]}
-                    </div>
-                </div>
+            {/* Search / Add */}
+            <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--border-color)' }}>
                 <button
-                    onClick={handleLogout}
-                    title="Cerrar Sesión"
-                    style={{
-                        background: 'rgba(255,255,255,0.05)',
-                        border: 'none',
-                        color: 'var(--text-muted)',
-                        cursor: 'pointer',
-                        padding: '0.5rem',
-                        borderRadius: '8px',
-                        transition: 'all 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)';
-                        e.currentTarget.style.color = '#ef4444';
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
-                        e.currentTarget.style.color = 'var(--text-muted)';
-                    }}
+                    onClick={() => setShowAdd(!showAdd)}
+                    className="chat-input"
+                    style={{ textAlign: 'center', cursor: 'pointer', background: '#2a3942' }}
                 >
-                    ✕
+                    {showAdd ? 'Cancelar' : '+ Nuevo Chat / Contacto'}
                 </button>
+            </div>
+
+            {showAdd && (
+                <form onSubmit={handleAddContact} style={{ padding: '1rem', background: '#2a3942', borderBottom: '1px solid var(--border-color)' }}>
+                    <input
+                        placeholder="Nombre"
+                        className="chat-input"
+                        style={{ marginBottom: '0.5rem', background: '#202c33' }}
+                        value={newContactName}
+                        onChange={e => setNewContactName(e.target.value)}
+                        required
+                    />
+                    <input
+                        placeholder="Teléfono"
+                        className="chat-input"
+                        style={{ marginBottom: '0.5rem', background: '#202c33' }}
+                        value={newContactPhone}
+                        onChange={e => setNewContactPhone(e.target.value)}
+                        required
+                    />
+                    <button type="submit" className="btn-primary" style={{ width: '100%', borderRadius: '4px' }}>Agregar a Contactos</button>
+                </form>
+            )}
+
+            {/* Chat List */}
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+                {contacts.map(c => (
+                    <div
+                        key={c.phone}
+                        onClick={() => onSelectChat && onSelectChat(c.phone)}
+                        style={{
+                            padding: '12px 16px',
+                            borderBottom: '1px solid var(--border-color)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '1rem',
+                            transition: 'background 0.2s'
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = '#2a3942'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    >
+                        <div style={{ width: '45px', height: '45px', background: '#6a7175', borderRadius: '50%', display: 'grid', placeItems: 'center' }}>
+                            👤
+                        </div>
+                        <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{c.name}</div>
+                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{c.phone}</div>
+                        </div>
+                    </div>
+                ))}
+                {contacts.length === 0 && !showAdd && (
+                    <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                        No tienes contactos. Añade uno con el botón de arriba.
+                    </div>
+                )}
             </div>
         </aside>
     );
